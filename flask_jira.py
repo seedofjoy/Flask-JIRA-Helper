@@ -12,7 +12,7 @@ from requests import ConnectionError
 
 __author__ = '@Robpol86'
 __license__ = 'MIT'
-__version__ = '0.2.0'
+__version__ = '0.2.1'
 LOG = logging.getLogger(__name__)
 
 
@@ -35,11 +35,17 @@ def read_config(config, prefix):
     Dictionary with parsed data, compatible with jira.client.JIRA.__init__() keyword arguments.
     """
     # Get all relevant config values from Flask application.
-    suffixes = ('SERVER', 'USER', 'PASSWORD', 'TOKEN', 'SECRET', 'CONSUMER', 'CERT')
-    config_server, config_user, config_password, config_token, config_secret, config_consumer, config_cert = [
+    suffixes = ('SERVER', 'USER', 'PASSWORD', 'TOKEN', 'SECRET', 'CONSUMER', 'CERT', 'VERIFY_SSL')
+    (
+        config_server, config_user, config_password, config_token,
+        config_secret, config_consumer, config_cert, config_verify,
+    ) = [
         config.get('{0}_{1}'.format(prefix, suffix)) for suffix in suffixes
     ]
-    result = dict(options=dict(server=config_server))
+    options = dict(server=config_server, verify=config_verify)
+    options = {k: v for k, v in options.items() if v is not None}
+
+    result = dict(options=options)
     # Gather authentication data.
     basic = (config_user, config_password)
     oauth = dict(
@@ -79,6 +85,7 @@ class JIRA(client.JIRA):
     JIRA_CONSUMER -- OAuth authentication consumer key.
     JIRA_CERT -- OAuth authentication key certificate data.
     JIRA_IGNORE_INITIAL_CONNECTION_FAILURE -- Ignore ConnectionError during init_app() for testing/development.
+    JIRA_VERIFY_SSL -- Verify SSL certs.
 
     The above settings names are based on the default config prefix of 'JIRA'. If the config_prefix is 'JIRA_SYSTEM' for
     example, then JIRA_SERVER will be JIRA_SYSTEM_SERVER, and so on.
